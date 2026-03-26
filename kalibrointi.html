@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Puna–viherkalibrointi</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg: #060608;
+      --surface: #0e0e12;
+      --surface2: #141418;
+      --border: #1c1c24;
+      --border-hi: #2a2a36;
+      --text: #e4e4ec;
+      --muted: #6e6e82;
+      --dim: #44445a;
+      --red-r: 226; --red-g: 0; --red-b: 0;
+      --green-r: 0; --green-g: 127; --green-b: 0;
+      --accent: #5bf;
+      --mm-line-px: 200;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', system-ui, sans-serif;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      overflow: hidden;
+    }
+
+    /* ============ MAIN AREA ============ */
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .topbar {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .topbar h1 {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .topbar-pills {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .pill.active { color: var(--text); border-color: var(--border-hi); }
+
+    .canvas-area {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      position: relative;
+      background:
+        radial-gradient(circle at 50% 50%, #0c0c10 0%, var(--bg) 70%);
+      min-height: 0;
+    }
+
+    .mallet-svg {
+      width: min(56vh, 520px);
+      height: min(56vh, 520px);
+    }
+
+    .mallet-svg svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Measure line */
+    .verify-line {
+      position: fixed;
+      top: 72px;
+      right: 0;
+      height: 4px;
+      background: #fff;
+      outline: 1px solid #333;
+      z-index: 1000;
+      transition: width 0.05s ease;
+    }
+
+    .verify-line.hidden { display: none; }
+
+    /* Bottom bar */
+    .bottombar {
+      padding: 12px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .status-text.ok { color: #6bff8a; }
+    .status-text.err { color: #ff6b6b; }
+
+    /* ============ SIDEBAR ============ */
+    .sidebar {
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+
+    .sb-section {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sb-section:last-child { border-bottom: none; }
+
+    .sb-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--dim);
+      margin-bottom: 14px;
+    }
+
+    /* Color control block */
+    .color-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      position: relative;
+    }
+
+    .color-block + .color-block { margin-top: 12px; }
+
+    .color-block-stripe {
+      position: absolute;
+      top: 0; left: 12px; right: 12px;
+      height: 2px;
+      border-radius: 0 0 2px 2px;
+    }
+
+    .cb-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .cb-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .cb-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      border: 1px solid var(--border-hi);
+    }
+
+    .cb-hex {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* Channel rows */
+    .ch-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+
+    .ch-row:last-child { margin-bottom: 0; }
+
+    .ch-lbl {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      width: 14px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .ch-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      line-height: 1;
+      user-select: none;
+      transition: background 0.1s;
+    }
+
+    .ch-btn:hover { background: var(--border); }
+    .ch-btn:active { background: var(--border-hi); }
+
+    .ch-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      min-width: 36px;
+      text-align: center;
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .ch-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .ch-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text);
+      border: 2px solid var(--bg);
+      cursor: pointer;
+    }
+
+    .ch-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text);
+      border: 2px solid var(--bg);
+      cursor: pointer;
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { background: var(--border); }
+    .btn:active { background: var(--border-hi); }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn.primary { background: #1a3a2a; border-color: #2a5a3a; color: #6bff8a; }
+    .btn.primary:hover { background: #224832; }
+    .btn.danger { background: #2a1a1a; border-color: #4a2a2a; color: #ff8a8a; }
+
+    /* Measure controls in sidebar */
+    .measure-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .measure-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      min-width: 70px;
+      text-align: center;
+    }
+
+    .measure-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* Info panel */
+    .info-line {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .info-line b { color: var(--text); font-weight: 500; }
+
+    /* Keys legend */
+    .key-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 12px;
+      font-size: 12px;
+    }
+
+    .key-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .key-desc { color: var(--muted); font-size: 12px; }
+
+    /* Results panel */
+    .results-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(6,6,8,0.92);
+      display: grid;
+      place-items: center;
+      z-index: 50;
+    }
+
+    .results-overlay.hidden { display: none; }
+
+    .results-box {
+      background: var(--surface);
+      border: 1px solid var(--border-hi);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 680px;
+      width: 90%;
+    }
+
+    .results-box h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .res-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .res-card h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .res-swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      border: 1px solid var(--border-hi);
+      margin-top: 8px;
+    }
+
+    .res-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .copy-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      line-height: 1.7;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Responsive */
+    @media (max-width: 860px) {
+      body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      .sidebar { max-height: none; border-left: none; border-top: 1px solid var(--border); }
+      .mallet-svg { width: min(70vw, 400px); height: min(70vw, 400px); }
+      .results-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="main">
+    <div class="topbar">
+      <h1>Puna–viherkalibrointi</h1>
+      <div class="topbar-pills">
+        <div class="pill active" id="pillRed">PUN</div>
+        <div class="pill active" id="pillGreen">VIH</div>
+        <div class="pill" id="pillMm">MITTA</div>
+      </div>
+    </div>
+
+    <div class="canvas-area" id="canvasArea">
+      <div class="verify-line hidden" id="verifyLine"></div>
+
+      <div class="mallet-svg" id="malletWrap">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+          <defs>
+            <clipPath id="c"><circle cx="256" cy="256" r="240"/></clipPath>
+          </defs>
+          <g transform="rotate(0, 256, 256)">
+            <circle cx="256" cy="256" r="240" fill="#000000"/>
+            <rect x="210" y="33" width="92" height="446" fill="#ffffff"/>
+            <rect x="250.5" y="224" width="11" height="64" fill="#000000"/>
+            <rect x="224" y="250.5" width="64" height="11" fill="#000000"/>
+            <rect x="228" y="100.5" width="56" height="56" fill="#000000"/>
+            <rect x="239" y="111.5" width="34" height="34" fill="#ffffff"/>
+            <rect x="228" y="355.5" width="56" height="56" fill="#000000"/>
+            <rect x="239" y="366.5" width="34" height="34" fill="#ffffff"/>
+            <rect id="svgGreenBar" x="42" y="237" width="152" height="38" fill="rgb(0,127,0)"/>
+            <rect id="svgRedBar" x="318" y="237" width="152" height="38" fill="rgb(226,0,0)"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="results-overlay hidden" id="resultsOverlay">
+        <div class="results-box">
+          <h2>Kalibrointi valmis</h2>
+          <p class="info-line">Syötä alla olevat arvot tutkimusohjelmaan.</p>
+          <div class="results-grid">
+            <div class="res-card">
+              <h3>Punainen</h3>
+              <div class="res-mono" id="resRedHex"></div>
+              <div class="res-mono" id="resRedRgb"></div>
+              <div class="res-swatch" id="resRedSwatch"></div>
+            </div>
+            <div class="res-card">
+              <h3>Vihreä</h3>
+              <div class="res-mono" id="resGreenHex"></div>
+              <div class="res-mono" id="resGreenRgb"></div>
+              <div class="res-swatch" id="resGreenSwatch"></div>
+            </div>
+            <div class="res-card">
+              <h3>Mittakalibrointi</h3>
+              <div class="res-mono" id="resMmLabel"></div>
+              <div class="res-mono" id="resPxMm"></div>
+            </div>
+          </div>
+          <div class="copy-block" id="copyBlock"></div>
+          <div style="margin-top:14px;display:flex;gap:10px;">
+            <button class="btn primary" id="copyBtn" type="button">Kopioi arvot</button>
+            <button class="btn danger" id="restartBtn2" type="button">Aloita alusta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <button class="btn" id="measureBtn" type="button">Mittakalibrointi</button>
+      <button class="btn hidden" id="backColorsBtn" type="button">← Takaisin</button>
+      <button class="btn hidden" id="mmMinusBtn" type="button">− Lyhennä</button>
+      <button class="btn hidden" id="mmPlusBtn" type="button">+ Pidennä</button>
+      <button class="btn primary" id="confirmBtn" type="button">Vahvista kaikki</button>
+      <button class="btn danger" id="restartBtn" type="button">Nollaa</button>
+      <button class="btn" id="factoryBtn" type="button" title="Palauta tehdasasetukset">Tehdasasetukset</button>
+      <span class="status-text" id="statusEl"></span>
+    </div>
+  </main>
+
+  <aside class="sidebar">
+    <!-- RED controls -->
+    <div class="sb-section">
+      <div class="sb-title">Punainen</div>
+      <div class="color-block">
+        <div class="color-block-stripe" style="background:rgb(226,0,0)"></div>
+        <div class="cb-header">
+          <span class="cb-hex" id="redHex">#E20000</span>
+          <div class="cb-swatch" id="redSwatch" style="background:rgb(226,0,0)"></div>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl" style="color:#f66">R</span>
+          <button class="ch-btn" data-color="red" data-ch="r" data-dir="-1">−</button>
+          <div class="ch-val" id="red-r-val">226</div>
+          <input type="range" class="ch-slider" id="red-r-slider" min="0" max="255" value="226" data-color="red" data-ch="r">
+          <button class="ch-btn" data-color="red" data-ch="r" data-dir="1">+</button>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl" style="color:#6d6">G</span>
+          <button class="ch-btn" data-color="red" data-ch="g" data-dir="-1">−</button>
+          <div class="ch-val" id="red-g-val">0</div>
+          <input type="range" class="ch-slider" id="red-g-slider" min="0" max="255" value="0" data-color="red" data-ch="g">
+          <button class="ch-btn" data-color="red" data-ch="g" data-dir="1">+</button>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl" style="color:#68f">B</span>
+          <button class="ch-btn" data-color="red" data-ch="b" data-dir="-1">−</button>
+          <div class="ch-val" id="red-b-val">0</div>
+          <input type="range" class="ch-slider" id="red-b-slider" min="0" max="255" value="0" data-color="red" data-ch="b">
+          <button class="ch-btn" data-color="red" data-ch="b" data-dir="1">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GREEN controls -->
+    <div class="sb-section">
+      <div class="sb-title">Vihreä</div>
+      <div class="color-block">
+        <div class="color-block-stripe" style="background:rgb(0,127,0)"></div>
+        <div class="cb-header">
+          <span class="cb-hex" id="greenHex">#007F00</span>
+          <div class="cb-swatch" id="greenSwatch" style="background:rgb(0,127,0)"></div>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl" style="color:#f66">R</span>
+          <button class="ch-btn" data-color="green" data-ch="r" data-dir="-1">−</button>
+          <div class="ch-val" id="green-r-val">0</div>
+          <input type="range" class="ch-slider" id="green-r-slider" min="0" max="255" value="0" data-color="green" data-ch="r">
+          <button class="ch-btn" data-color="green" data-ch="r" data-dir="1">+</button>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl" style="color:#6d6">G</span>
+          <button class="ch-btn" data-color="green" data-ch="g" data-dir="-1">−</button>
+          <div class="ch-val" id="green-g-val">127</div>
+          <input type="range" class="ch-slider" id="green-g-slider" min="0" max="255" value="127" data-color="green" data-ch="g">
+          <button class="ch-btn" data-color="green" data-ch="g" data-dir="1">+</button>
+        </div>
+        <div class="ch-row">
+          <span class="ch-lbl" style="color:#68f">B</span>
+          <button class="ch-btn" data-color="green" data-ch="b" data-dir="-1">−</button>
+          <div class="ch-val" id="green-b-val">0</div>
+          <input type="range" class="ch-slider" id="green-b-slider" min="0" max="255" value="0" data-color="green" data-ch="b">
+          <button class="ch-btn" data-color="green" data-ch="b" data-dir="1">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEASURE info -->
+    <div class="sb-section">
+      <div class="sb-title">Mittakalibrointi</div>
+      <div class="info-line" id="mmInfo">Ei vielä tehty</div>
+    </div>
+
+    <!-- INSTRUCTIONS -->
+    <div class="sb-section">
+      <div class="sb-title">Ohjeet</div>
+      <p class="info-line">1. Katso <b>vihreän linssin</b> läpi ja säädä punainen väri.</p>
+      <p class="info-line" style="margin-top:4px">2. Katso <b>punaisen linssin</b> läpi ja säädä vihreä väri.</p>
+      <p class="info-line" style="margin-top:4px">3. Paina <b>Mittakalibrointi</b> ja säädä viiva tasan 200 mm.</p>
+      <p class="info-line" style="margin-top:4px">4. Paina <b>Vahvista kaikki</b>.</p>
+    </div>
+
+    <!-- KEYS -->
+    <div class="sb-section">
+      <div class="sb-title">Näppäimet</div>
+      <div class="key-grid">
+        <span class="key-tag">← →</span><span class="key-desc">Mittaviiva (← pidempi, → lyhyempi)</span>
+        <span class="key-tag">PgUp/Dn</span><span class="key-desc">Mittaviiva ±10 px</span>
+        <span class="key-tag">Enter</span><span class="key-desc">Vahvista</span>
+        <span class="key-tag">R</span><span class="key-desc">Aloita alusta</span>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    const MM = 200;
+
+    const state = {
+      red:   { r: 226, g: 0, b: 0 },
+      green: { r: 0,   g: 127, b: 0 },
+      linePx: null,
+      mmMode: false,
+      done: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    const svgRedBar   = $('svgRedBar');
+    const svgGreenBar = $('svgGreenBar');
+    const verifyLine  = $('verifyLine');
+    const statusEl    = $('statusEl');
+    const malletWrap  = $('malletWrap');
+
+    function clamp(v) { return Math.max(0, Math.min(255, v)); }
+
+    function hex({ r, g, b }) {
+      const h = n => n.toString(16).padStart(2, '0').toUpperCase();
+      return `#${h(r)}${h(g)}${h(b)}`;
+    }
+
+    function rgbStr({ r, g, b }) { return `rgb(${r}, ${g}, ${b})`; }
+
+    function setStatus(msg, type) {
+      statusEl.textContent = msg || '';
+      statusEl.className = 'status-text' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+    }
+
+    function renderColors() {
+      const rc = state.red, gc = state.green;
+
+      // SVG bars
+      svgRedBar.setAttribute('fill', rgbStr(rc));
+      svgGreenBar.setAttribute('fill', rgbStr(gc));
+
+      // Red panel
+      $('redSwatch').style.background = hex(rc);
+      $('redHex').textContent = hex(rc);
+      $('red-r-val').textContent = rc.r;
+      $('red-g-val').textContent = rc.g;
+      $('red-b-val').textContent = rc.b;
+      $('red-r-slider').value = rc.r;
+      $('red-g-slider').value = rc.g;
+      $('red-b-slider').value = rc.b;
+
+      // Green panel
+      $('greenSwatch').style.background = hex(gc);
+      $('greenHex').textContent = hex(gc);
+      $('green-r-val').textContent = gc.r;
+      $('green-g-val').textContent = gc.g;
+      $('green-b-val').textContent = gc.b;
+      $('green-r-slider').value = gc.r;
+      $('green-g-slider').value = gc.g;
+      $('green-b-slider').value = gc.b;
+    }
+
+    function renderMeasure() {
+      if (state.linePx !== null) {
+        $('mmInfo').innerHTML =
+          `<b>${state.linePx.toFixed(1)} px</b> / ${MM} mm<br>${(state.linePx / MM).toFixed(4)} px/mm`;
+      } else {
+        $('mmInfo').textContent = 'Ei vielä tehty';
+      }
+
+      verifyLine.classList.toggle('hidden', !state.mmMode);
+      if (state.mmMode && state.linePx) {
+        verifyLine.style.width = state.linePx + 'px';
+      }
+
+      // Toggle mm mode buttons
+      $('mmMinusBtn').classList.toggle('hidden', !state.mmMode);
+      $('mmPlusBtn').classList.toggle('hidden', !state.mmMode);
+      $('backColorsBtn').classList.toggle('hidden', !state.mmMode);
+      $('measureBtn').classList.toggle('hidden', state.mmMode);
+
+      // pills
+      $('pillMm').classList.toggle('active', state.mmMode || state.linePx !== null);
+    }
+
+    function render() {
+      renderColors();
+      renderMeasure();
+    }
+
+    function adjustColor(colorName, ch, delta) {
+      if (state.done) return;
+      state[colorName][ch] = clamp(state[colorName][ch] + delta);
+      renderColors();
+    }
+
+    function setColorChannel(colorName, ch, val) {
+      if (state.done) return;
+      state[colorName][ch] = clamp(val);
+      renderColors();
+    }
+
+    function openMm() {
+      if (state.done) return;
+      state.mmMode = true;
+      if (!state.linePx) state.linePx = FACTORY_LINEPX;
+      setStatus('Säädä viiva 200 mm pituuteen. ← pidempi, → lyhyempi.', 'ok');
+      render();
+    }
+
+    function closeMm() {
+      state.mmMode = false;
+      if (state.linePx) setStatus(`Mitta: ${state.linePx.toFixed(1)} px / ${MM} mm`, 'ok');
+      render();
+    }
+
+    // NOTE: reversed arrow logic — positive delta = longer line
+    function adjustLine(delta) {
+      if (!state.mmMode) return;
+      state.linePx = Math.max(50, state.linePx + delta);
+      renderMeasure();
+    }
+
+    async function finish() {
+      if (state.linePx === null) {
+        setStatus('Tee ensin mittakalibrointi.', 'err');
+        return;
+      }
+      state.done = true;
+      state.mmMode = false;
+
+      const rc = state.red, gc = state.green;
+
+      $('resRedHex').textContent = hex(rc);
+      $('resRedRgb').textContent = rgbStr(rc);
+      $('resRedSwatch').style.background = hex(rc);
+      $('resGreenHex').textContent = hex(gc);
+      $('resGreenRgb').textContent = rgbStr(gc);
+      $('resGreenSwatch').style.background = hex(gc);
+      $('resMmLabel').textContent = `${MM} mm = ${state.linePx.toFixed(1)} px`;
+      $('resPxMm').textContent = `${(state.linePx / MM).toFixed(4)} px/mm`;
+
+      const copyText =
+`redRgb: ${rc.r}, ${rc.g}, ${rc.b}
+redHex: ${hex(rc)}
+greenRgb: ${gc.r}, ${gc.g}, ${gc.b}
+greenHex: ${hex(gc)}
+pxPerMm: ${(state.linePx / MM).toFixed(6)}
+line${MM}mmPx: ${state.linePx.toFixed(2)}`;
+
+      $('copyBlock').textContent = copyText;
+      $('resultsOverlay').classList.remove('hidden');
+      verifyLine.classList.remove('hidden');
+      verifyLine.style.width = state.linePx + 'px';
+      setStatus('Kalibrointi valmis.', 'ok');
+
+      $('confirmBtn').disabled = true;
+      $('measureBtn').classList.add('hidden');
+      $('mmMinusBtn').classList.add('hidden');
+      $('mmPlusBtn').classList.add('hidden');
+      $('backColorsBtn').classList.add('hidden');
+
+      // Save as defaults for next session
+      await saveDefaults();
+    }
+
+    // ---- Persistent storage ----
+
+    async function waitForStorage(maxWait = 3000) {
+      if (window.storage) return true;
+      const start = Date.now();
+      while (Date.now() - start < maxWait) {
+        await new Promise(r => setTimeout(r, 100));
+        if (window.storage) return true;
+      }
+      return false;
+    }
+
+    async function saveDefaults() {
+      try {
+        await waitForStorage();
+        const data = {
+          red: { ...state.red },
+          green: { ...state.green },
+          linePx: state.linePx
+        };
+        state.savedRed   = { ...state.red };
+        state.savedGreen = { ...state.green };
+        state.savedLinePx = state.linePx;
+        await window.storage.set('calibration-defaults', JSON.stringify(data));
+      } catch (e) {
+        console.error('Tallennus epäonnistui:', e);
+      }
+    }
+
+    async function loadDefaults() {
+      try {
+        const ready = await waitForStorage();
+        if (!ready) return null;
+        const result = await window.storage.get('calibration-defaults');
+        if (result && result.value) {
+          return JSON.parse(result.value);
+        }
+      } catch (e) {
+        // No saved data — use hard-coded defaults
+      }
+      return null;
+    }
+
+    const FACTORY_RED   = { r: 226, g: 0, b: 0 };
+    const FACTORY_GREEN = { r: 0, g: 127, b: 0 };
+    const FACTORY_LINEPX = 4.245 * MM; // 849 px = 4.245 px/mm × 200 mm
+
+    function restart() {
+      // Restart uses saved defaults (last confirmed calibration), not factory values
+      state.red   = { ...state.savedRed   || FACTORY_RED };
+      state.green = { ...state.savedGreen || FACTORY_GREEN };
+      state.linePx = state.savedLinePx || FACTORY_LINEPX;
+      state.mmMode = false;
+      state.done = false;
+      $('resultsOverlay').classList.add('hidden');
+      $('confirmBtn').disabled = false;
+      $('measureBtn').classList.remove('hidden');
+      setStatus('Nollattu edellisen kalibroinnin arvoihin.', 'ok');
+      render();
+    }
+
+    async function factoryReset() {
+      state.red   = { ...FACTORY_RED };
+      state.green = { ...FACTORY_GREEN };
+      state.linePx = FACTORY_LINEPX;
+      state.savedRed = null;
+      state.savedGreen = null;
+      state.savedLinePx = null;
+      state.mmMode = false;
+      state.done = false;
+      $('resultsOverlay').classList.add('hidden');
+      $('confirmBtn').disabled = false;
+      $('measureBtn').classList.remove('hidden');
+      setStatus('Palautettu tehdasasetuksiin.', 'ok');
+      render();
+      // Clear storage
+      try { await waitForStorage(); await window.storage.delete('calibration-defaults'); } catch(e) {}
+    }
+
+    // Init: load saved defaults and apply
+    async function init() {
+      const saved = await loadDefaults();
+      if (saved) {
+        state.red   = { ...saved.red };
+        state.green = { ...saved.green };
+        state.linePx = saved.linePx;
+        // Keep saved copies for restart
+        state.savedRed   = { ...saved.red };
+        state.savedGreen = { ...saved.green };
+        state.savedLinePx = saved.linePx;
+        setStatus('Ladattu edellisen kalibroinnin arvot.', 'ok');
+      } else {
+        state.red = { ...FACTORY_RED };
+        state.green = { ...FACTORY_GREEN };
+        state.linePx = FACTORY_LINEPX;
+        state.savedRed = null;
+        state.savedGreen = null;
+        state.savedLinePx = null;
+      }
+      render();
+    }
+
+    function copyResults() {
+      const text = $('copyBlock').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        setStatus('Kopioitu leikepöydälle.', 'ok');
+      }).catch(() => {
+        setStatus('Kopiointi epäonnistui.', 'err');
+      });
+    }
+
+    // ---- Event listeners ----
+
+    // +/- buttons
+    document.querySelectorAll('.ch-btn[data-color]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        adjustColor(btn.dataset.color, btn.dataset.ch, parseInt(btn.dataset.dir));
+      });
+    });
+
+    // sliders
+    document.querySelectorAll('.ch-slider').forEach(slider => {
+      slider.addEventListener('input', () => {
+        setColorChannel(slider.dataset.color, slider.dataset.ch, parseInt(slider.value));
+      });
+    });
+
+    $('measureBtn').addEventListener('click', openMm);
+    $('backColorsBtn').addEventListener('click', closeMm);
+    $('mmMinusBtn').addEventListener('click', () => adjustLine(-1));
+    $('mmPlusBtn').addEventListener('click', () => adjustLine(1));
+    $('confirmBtn').addEventListener('click', () => {
+      if (state.mmMode) { closeMm(); return; }
+      finish();
+    });
+    $('restartBtn').addEventListener('click', restart);
+    $('restartBtn2').addEventListener('click', restart);
+    $('copyBtn').addEventListener('click', copyResults);
+    $('factoryBtn').addEventListener('click', factoryReset);
+
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+      if (state.done && e.key.toLowerCase() !== 'r') return;
+
+      if (state.mmMode) {
+        // REVERSED: ArrowLeft = longer (+1), ArrowRight = shorter (-1)
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault(); adjustLine(1);
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault(); adjustLine(-1);
+        } else if (e.key === 'PageUp') {
+          e.preventDefault(); adjustLine(10);
+        } else if (e.key === 'PageDown') {
+          e.preventDefault(); adjustLine(-10);
+        } else if (e.key === 'Enter') {
+          e.preventDefault(); closeMm();
+        }
+      } else {
+        if (e.key === 'Enter') { e.preventDefault(); finish(); }
+      }
+
+      if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey) {
+        // Only restart if not typing in an input
+        if (e.target.tagName === 'INPUT') return;
+        e.preventDefault(); restart();
+      }
+    });
+
+    // Init
+    init();
+  </script>
+</body>
+</html>
