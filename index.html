@@ -1903,7 +1903,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFOvhwDR8hh2Plx9NTjDlaRDpFDBKzdhgurgkqTodrLuZAKCjJOG5baDkxTD8IUT9C/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIJclBT2XYHm4ebghD2qyUkMXCjTrr8S9wR-JWeisMIM4qB7d3MHMlUKoSti0CNs4Xhg/exec';
     const CAL_PASSWORD = 'Silmä';
     const STORAGE_KEY = 'naontutkimus_cal_v1';
 
@@ -1935,7 +1935,7 @@
     const questions = [
       { id: 'headache', text: 'SÄRKEEKÖ SINULLA PÄÄTÄ VÄHINTÄÄN KERRAN VIIKOSSA?' },
       { id: 'eyeFatigue', text: 'VÄSYVÄTKÖ SILMÄSI HELPOSTI?' },
-      { id: 'sportError', text: 'TAPAHTUUKO URHEILUSUORITUKSESSA JOSKUS NIIN, ETTÄ TILANNE NÄYTTI SILMISSÄSI ERILAISELTA KUIN MITÄ OIKEASTI TAPAHTUI? ESIMERKIKSI PALLO EI OLLUTKAAN SIINÄ MISSÄ LUULIT SEN OLEVAN.' }
+      { id: 'readingIssue', text: 'TUNTUVATKO RIVIT LUKIESSA JOSKUS HYPPIVÄN NIIN, ETTÄ LUKEMINEN ON VAIKEAA?' }
     ];
     let questionAnswers = {}, currentQuestionIdx = 0;
 
@@ -2559,7 +2559,7 @@
 
             <div class="result-section">
               <h3>KYSELY</h3>
-              <p>PÄÄNSÄRKY VIIKOITTAIN: ${questionAnswers.headache}<br>SILMIEN VÄSYMINEN: ${questionAnswers.eyeFatigue}<br>URHEILUSUORITUKSEN ONGELMA: ${questionAnswers.sportError}</p>
+              <p>PÄÄNSÄRKY VIIKOITTAIN: ${questionAnswers.headache}<br>SILMIEN VÄSYMINEN: ${questionAnswers.eyeFatigue}<br>RIVIT HYPPIVÄT LUKIESSA: ${questionAnswers.readingIssue}</p>
             </div>
           </div>
 
@@ -2653,7 +2653,7 @@
 
             <div class="ref-section">
               <h3>KYSELY</h3>
-              <p>PÄÄNSÄRKY VIIKOITTAIN: ${questionAnswers.headache}<br>SILMIEN VÄSYMINEN: ${questionAnswers.eyeFatigue}<br>URHEILUSUORITUKSEN ONGELMA: ${questionAnswers.sportError}</p>
+              <p>PÄÄNSÄRKY VIIKOITTAIN: ${questionAnswers.headache}<br>SILMIEN VÄSYMINEN: ${questionAnswers.eyeFatigue}<br>RIVIT HYPPIVÄT LUKIESSA: ${questionAnswers.readingIssue}</p>
             </div>
           </div>
 
@@ -2715,7 +2715,7 @@
         fd_vaaka_katoaa: 'EI',
         paansarky: questionAnswers.headache || '',
         silmien_vasyminen: questionAnswers.eyeFatigue || '',
-        urheilusuoritus: questionAnswers.sportError || '',
+        rivit_hyppivat: questionAnswers.readingIssue || '',
         suositus: shouldRecommend() ? 'KYLLÄ' : 'EI'
       };
 
