@@ -1903,7 +1903,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIJclBT2XYHm4ebghD2qyUkMXCjTrr8S9wR-JWeisMIM4qB7d3MHMlUKoSti0CNs4Xhg/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby37qpX4X1nJvMeMApQKTarngC1KJ2suDb6x65eosvWpbOTnurEp7Qg-_LFHYFuB8E0WQ/exec';
     const CAL_PASSWORD = 'Silmä';
     const STORAGE_KEY = 'naontutkimus_cal_v1';
 
@@ -2703,16 +2703,8 @@
         ika: String(age),
         visus_oikea: visusLabel(visusRight),
         visus_vasen: visusLabel(visusLeft),
-        fd_pysty_valinta: fdVertSelection || '',
-        fd_pysty_ok: yn(fdVertSelection === 'ok'),
         fd_pysty_siirtyma: yn(fdVertSelection === 'eso' || fdVertSelection === 'exo'),
-        fd_pysty_liike: 'EI',
-        fd_pysty_katoaa: 'EI',
-        fd_vaaka_valinta: fdHorizSelection || '',
-        fd_vaaka_ok: yn(fdHorizSelection === 'ok'),
         fd_vaaka_siirtyma: yn(fdHorizSelection === 'hyper' || fdHorizSelection === 'hypo'),
-        fd_vaaka_liike: 'EI',
-        fd_vaaka_katoaa: 'EI',
         paansarky: questionAnswers.headache || '',
         silmien_vasyminen: questionAnswers.eyeFatigue || '',
         rivit_hyppivat: questionAnswers.readingIssue || '',
