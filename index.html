@@ -1651,7 +1651,7 @@
   <div class="screen hidden" id="instructScreen">
     <div class="card">
       <div class="step-tag" id="eyeStepTag">VAIHE 2 / 5</div>
-      <h1 id="instructTitle">TARKKUUSHAVAINTOTEHTÄVÄ – OIKEA SILMÄ</h1>
+      <h1 id="instructTitle">TARKKUUSHAVAINTOTEHTÄVÄ – PEITÄ VASEN SILMÄ</h1>
       <p class="subtitle" id="instructText"></p>
       <button class="btn-primary" id="instructStartBtn">ALOITA</button>
     </div>
@@ -2277,10 +2277,10 @@
       $('eyeStepTag').textContent = 'VAIHE 2 / 5';
 
       if (eye === 'right') {
-        $('instructTitle').textContent = 'TARKKUUSHAVAINTOTEHTÄVÄ – OIKEA SILMÄ';
+        $('instructTitle').textContent = 'TARKKUUSHAVAINTOTEHTÄVÄ – PEITÄ VASEN SILMÄ';
         $('instructText').innerHTML = '1. PEITÄ VASEN SILMÄSI KÄDELLÄ TAI PEITTOLAPULLA.<br>2. KATSO RUUDULLA NÄKYVIÄ RENGASKUVIOITA OIKEALLA SILMÄLLÄ JA VASTAA NUOLINÄPPÄIMILLÄ MIHIN SUUNTAAN AUKKO OSOITTAA.<br>3. JOS ET EROTA AUKON SUUNTAA, VALITSE "EN NÄE".';
       } else {
-        $('instructTitle').textContent = 'TARKKUUSHAVAINTOTEHTÄVÄ – VASEN SILMÄ';
+        $('instructTitle').textContent = 'TARKKUUSHAVAINTOTEHTÄVÄ – PEITÄ OIKEA SILMÄ';
         $('instructText').innerHTML = '1. PEITÄ NYT OIKEA SILMÄSI KÄDELLÄ TAI PEITTOLAPULLA.<br>2. KATSO RUUDULLA NÄKYVIÄ RENGASKUVIOITA VASEMMALLA SILMÄLLÄ JA VASTAA NUOLINÄPPÄIMILLÄ, MIHIN SUUNTAAN AUKKO OSOITTAA.<br>3. JOS ET EROTA AUKON SUUNTAA, VALITSE "EN NÄE".';
       }
 
@@ -2296,7 +2296,7 @@
       levelLog = [];
       lastDirection = '';
 
-      $('eyeLabel').textContent = currentEye === 'right' ? 'OIKEA SILMÄ' : 'VASEN SILMÄ';
+      $('eyeLabel').textContent = currentEye === 'right' ? 'PEITÄ VASEN SILMÄ' : 'PEITÄ OIKEA SILMÄ';
       showScreen('testScreen');
       showOptotype();
     });
