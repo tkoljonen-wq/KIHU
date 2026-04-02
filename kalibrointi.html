@@ -17,7 +17,7 @@
       --muted: #6e6e82;
       --dim: #44445a;
       --red-r: 226; --red-g: 0; --red-b: 0;
-      --green-r: 0; --green-g: 127; --green-b: 0;
+      --green-r: 0; --green-g: 157; --green-b: 0;
       --accent: #5bf;
       --mm-line-px: 200;
     }
@@ -469,7 +469,7 @@
             <rect x="239" y="111.5" width="34" height="34" fill="#ffffff"/>
             <rect x="228" y="355.5" width="56" height="56" fill="#000000"/>
             <rect x="239" y="366.5" width="34" height="34" fill="#ffffff"/>
-            <rect id="svgGreenBar" x="42" y="237" width="152" height="38" fill="rgb(0,127,0)"/>
+            <rect id="svgGreenBar" x="42" y="237" width="152" height="38" fill="rgb(0,157,0)"/>
             <rect id="svgRedBar" x="318" y="237" width="152" height="38" fill="rgb(226,0,0)"/>
           </g>
         </svg>
@@ -557,10 +557,10 @@
     <div class="sb-section">
       <div class="sb-title">Vihreä</div>
       <div class="color-block">
-        <div class="color-block-stripe" style="background:rgb(0,127,0)"></div>
+        <div class="color-block-stripe" style="background:rgb(0,157,0)"></div>
         <div class="cb-header">
           <span class="cb-hex" id="greenHex">#007F00</span>
-          <div class="cb-swatch" id="greenSwatch" style="background:rgb(0,127,0)"></div>
+          <div class="cb-swatch" id="greenSwatch" style="background:rgb(0,157,0)"></div>
         </div>
         <div class="ch-row">
           <span class="ch-lbl" style="color:#f66">R</span>
@@ -572,8 +572,8 @@
         <div class="ch-row">
           <span class="ch-lbl" style="color:#6d6">G</span>
           <button class="ch-btn" data-color="green" data-ch="g" data-dir="-1">−</button>
-          <div class="ch-val" id="green-g-val">127</div>
-          <input type="range" class="ch-slider" id="green-g-slider" min="0" max="255" value="127" data-color="green" data-ch="g">
+          <div class="ch-val" id="green-g-val">157</div>
+          <input type="range" class="ch-slider" id="green-g-slider" min="0" max="255" value="157" data-color="green" data-ch="g">
           <button class="ch-btn" data-color="green" data-ch="g" data-dir="1">+</button>
         </div>
         <div class="ch-row">
@@ -618,7 +618,7 @@
 
     const state = {
       red:   { r: 226, g: 0, b: 0 },
-      green: { r: 0,   g: 127, b: 0 },
+      green: { r: 0,   g: 157, b: 0 },
       linePx: null,
       mmMode: false,
       done: false
@@ -822,7 +822,7 @@ line${MM}mmPx: ${state.linePx.toFixed(2)}`;
     }
 
     const FACTORY_RED   = { r: 226, g: 0, b: 0 };
-    const FACTORY_GREEN = { r: 0, g: 127, b: 0 };
+    const FACTORY_GREEN = { r: 0, g: 157, b: 0 };
     const FACTORY_LINEPX = 4.245 * MM; // 849 px = 4.245 px/mm × 200 mm
 
     function restart() {
