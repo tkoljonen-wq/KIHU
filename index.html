@@ -2508,8 +2508,10 @@
       const headacheYes = questionAnswers.headache === 'KYLLÄ';
       const eyeFatigueYes = questionAnswers.eyeFatigue === 'KYLLÄ';
       const readingIssueYes = questionAnswers.readingIssue === 'KYLLÄ';
-      const fdVertShift = fdVertSelection !== 'ok';
-      const fdHorizShift = fdHorizSelection !== 'ok';
+      // HUOM: fdVertSelection tulee PYSTYPALKKI-näytöstä, jossa poikkeama vastaa vaakasiirtymää.
+      // fdHorizSelection tulee VAAKAPALKKI-näytöstä, jossa poikkeama vastaa pystysiirtymää.
+      const fdHorizShift = fdVertSelection !== 'ok';
+      const fdVertShift = fdHorizSelection !== 'ok';
 
       // Ennallaan säilyvät yksinään suosituksen laukaisevat kriteerit
       if (visusRight === null || visusRight <= 0.8) return true;
@@ -2716,8 +2718,10 @@
         ika: String(age),
         visus_oikea: visusLabel(visusRight),
         visus_vasen: visusLabel(visusLeft),
-        fd_pysty_siirtyma: yn(fdVertSelection === 'eso' || fdVertSelection === 'exo'),
-        fd_vaaka_siirtyma: yn(fdHorizSelection === 'hyper' || fdHorizSelection === 'hypo'),
+        // PYSTYPALKKI-näytön eso/exo-valinta vastaa FD-vaakasiirtymää.
+        // VAAKAPALKKI-näytön hyper/hypo-valinta vastaa FD-pystysiirtymää.
+        fd_pysty_siirtyma: yn(fdHorizSelection === 'hyper' || fdHorizSelection === 'hypo'),
+        fd_vaaka_siirtyma: yn(fdVertSelection === 'eso' || fdVertSelection === 'exo'),
         paansarky: questionAnswers.headache || '',
         silmien_vasyminen: questionAnswers.eyeFatigue || '',
         rivit_hyppivat: questionAnswers.readingIssue || '',
