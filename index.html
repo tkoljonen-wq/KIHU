@@ -572,6 +572,21 @@
       pointer-events: none;
     }
 
+    .fd-disappear-btn {
+      min-height: 118px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 10px;
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    .fd-disappear-btn span { pointer-events: none; }
+
     /* FD VERT CUSTOM LAYOUT */
     .fd-vert-layout {
       display: flex;
@@ -1695,7 +1710,7 @@
   <div class="screen hidden" id="fdVertScreen">
     <div class="fd-vert-layout">
       <div class="fd-vert-left">
-        <div class="fd-vert-instruction">1. KATSO ALLA OLEVAA KUVAA, JOSSA ON PUNAINEN JA VIHREÄ PALKKI.<br>2. VALITSE OIKEASTA REUNASTA KUVA, JOKA VASTAA PARHAITEN NÄKEMÄÄSI.<br>3. JOS PALKIT EIVÄT OLE TÄYSIN SAMASSA LINJASSA, VALITSE JOMPIKUMPI KAHDESTA ALIMMASTA VAIHTOEHDOSTA.</div>
+        <div class="fd-vert-instruction">1. KATSO ALLA OLEVAA KUVAA, JOSSA ON PUNAINEN JA VIHREÄ PALKKI.<br>2. VALITSE OIKEASTA REUNASTA KUVA, JOKA VASTAA PARHAITEN NÄKEMÄÄSI.<br>3. JOS PALKIT EIVÄT OLE TÄYSIN SAMASSA LINJASSA, VALITSE SIIRTYMÄÄ VASTAAVA KUVA.<br>4. JOS TOINEN PALKKI KATOAA VÄHINTÄÄN HETKEKSI, VALITSE ALIN LAATIKKO.</div>
         <div class="fd-stage" id="fdVertStage"></div>
       </div>
       <div class="fd-vert-right">
@@ -1813,13 +1828,16 @@
   </g>
 </svg>
         </button>
+        <button class="fd-img-btn fd-disappear-btn fd-vert-img-btn" data-val="disappears">
+          <span>TOINEN PALKKI KATOAA VÄHINTÄÄN HETKEKSI</span>
+        </button>
       </div>
     </div>
   </div>
   <div class="screen hidden" id="fdHorizScreen">
     <div class="fd-vert-layout">
       <div class="fd-vert-left">
-        <div class="fd-vert-instruction">1. KATSO ALLA OLEVAA KUVAA, JOSSA ON PUNAINEN JA VIHREÄ PALKKI.<br>2. VALITSE OIKEASTA REUNASTA KUVA, JOKA VASTAA PARHAITEN NÄKEMÄÄSI.<br>3. JOS PALKIT EIVÄT OLE TÄYSIN SAMASSA LINJASSA, VALITSE JOMPIKUMPI KAHDESTA ALIMMASTA VAIHTOEHDOSTA.</div>
+        <div class="fd-vert-instruction">1. KATSO ALLA OLEVAA KUVAA, JOSSA ON PUNAINEN JA VIHREÄ PALKKI.<br>2. VALITSE OIKEASTA REUNASTA KUVA, JOKA VASTAA PARHAITEN NÄKEMÄÄSI.<br>3. JOS PALKIT EIVÄT OLE TÄYSIN SAMASSA LINJASSA, VALITSE SIIRTYMÄÄ VASTAAVA KUVA.<br>4. JOS TOINEN PALKKI KATOAA VÄHINTÄÄN HETKEKSI, VALITSE ALIN LAATIKKO.</div>
         <div class="fd-stage" id="fdHorizStage"></div>
       </div>
       <div class="fd-vert-right">
@@ -1888,6 +1906,9 @@
   </g>
 </svg>
         </button>
+        <button class="fd-img-btn fd-disappear-btn fd-horiz-img-btn" data-val="disappears">
+          <span>TOINEN PALKKI KATOAA VÄHINTÄÄN HETKEKSI</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1929,9 +1950,9 @@
     let uidCounter = 0, inputLocked = false, levelLog = [];
     let currentEye = 'right';
     let visusRight = null, visusLeft = null;
-    // fdVertResult now stores: 'ok', 'eso', or 'exo'
+    // fdVertSelection stores: 'ok', 'eso', 'exo', or 'disappears'
     let fdVertSelection = null;
-    let fdHorizSelection = null;
+    let fdHorizSelection = null; // 'ok', 'hyper', 'hypo', or 'disappears'
     const questions = [
       { id: 'headache', text: 'SÄRKEEKÖ SINULLA PÄÄTÄ VÄHINTÄÄN KERRAN VIIKOSSA?' },
       { id: 'eyeFatigue', text: 'VÄSYVÄTKÖ SILMÄSI HELPOSTI?' },
@@ -2457,12 +2478,14 @@
     function fdVertLabel(selection) {
       if (selection === 'ok') return 'EI SELVÄÄ POIKKEAVAA HAVAINTOA TÄSSÄ TEHTÄVÄSSÄ.';
       if (selection === 'eso' || selection === 'exo') return 'EI SAMASSA LINJASSA';
+      if (selection === 'disappears') return 'TOINEN PALKKI KATOAA VÄHINTÄÄN HETKEKSI';
       return '-';
     }
 
     function fdHorizLabel(selection) {
       if (selection === 'ok') return 'EI SELVÄÄ POIKKEAVAA HAVAINTOA TÄSSÄ TEHTÄVÄSSÄ.';
       if (selection === 'hyper' || selection === 'hypo') return 'EI SAMASSA LINJASSA';
+      if (selection === 'disappears') return 'TOINEN PALKKI KATOAA VÄHINTÄÄN HETKEKSI';
       return '-';
     }
 
@@ -2510,13 +2533,15 @@
       const readingIssueYes = questionAnswers.readingIssue === 'KYLLÄ';
       // HUOM: fdVertSelection tulee PYSTYPALKKI-näytöstä, jossa poikkeama vastaa vaakasiirtymää.
       // fdHorizSelection tulee VAAKAPALKKI-näytöstä, jossa poikkeama vastaa pystysiirtymää.
-      const fdHorizShift = fdVertSelection !== 'ok';
-      const fdVertShift = fdHorizSelection !== 'ok';
+      const fdHorizShift = fdVertSelection === 'eso' || fdVertSelection === 'exo';
+      const fdVertShift = fdHorizSelection === 'hyper' || fdHorizSelection === 'hypo';
+      const fdDisappears = fdVertSelection === 'disappears' || fdHorizSelection === 'disappears';
 
       // Ennallaan säilyvät yksinään suosituksen laukaisevat kriteerit
       if (visusRight === null || visusRight <= 0.8) return true;
       if (visusLeft === null || visusLeft <= 0.8) return true;
       if (fdVertShift) return true;
+      if (fdDisappears) return true;
       if (eyeFatigueYes) return true;
       if (readingIssueYes) return true;
 
@@ -2722,6 +2747,8 @@
         // VAAKAPALKKI-näytön hyper/hypo-valinta vastaa FD-pystysiirtymää.
         fd_pysty_siirtyma: yn(fdHorizSelection === 'hyper' || fdHorizSelection === 'hypo'),
         fd_vaaka_siirtyma: yn(fdVertSelection === 'eso' || fdVertSelection === 'exo'),
+        fd_pystypalkit_katoaa: yn(fdVertSelection === 'disappears'),
+        fd_vaakapalkit_katoaa: yn(fdHorizSelection === 'disappears'),
         paansarky: questionAnswers.headache || '',
         silmien_vasyminen: questionAnswers.eyeFatigue || '',
         rivit_hyppivat: questionAnswers.readingIssue || '',
