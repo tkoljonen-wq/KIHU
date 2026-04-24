@@ -2505,12 +2505,25 @@
     }
 
     function shouldRecommend() {
+      const headacheYes = questionAnswers.headache === 'KYLLÄ';
+      const eyeFatigueYes = questionAnswers.eyeFatigue === 'KYLLÄ';
+      const readingIssueYes = questionAnswers.readingIssue === 'KYLLÄ';
+      const fdVertShift = fdVertSelection !== 'ok';
+      const fdHorizShift = fdHorizSelection !== 'ok';
+
+      // Ennallaan säilyvät yksinään suosituksen laukaisevat kriteerit
       if (visusRight === null || visusRight <= 0.8) return true;
       if (visusLeft === null || visusLeft <= 0.8) return true;
-      // fdVertSelection: 'ok' = no recommendation, 'eso' or 'exo' = recommend
-      if (fdVertSelection !== 'ok') return true;
-      if (fdHorizSelection !== 'ok') return true;
-      if (Object.values(questionAnswers).some(a => a === 'KYLLÄ')) return true;
+      if (fdVertShift) return true;
+      if (eyeFatigueYes) return true;
+      if (readingIssueYes) return true;
+
+      // Kevennetty sääntö:
+      // - päänsärky yksinään ei laukaise suositusta
+      // - FD vaakasiirtymä yksinään ei laukaise suositusta
+      // - päänsärky + FD vaakasiirtymä yhdessä laukaisee suosituksen
+      if (headacheYes && fdHorizShift) return true;
+
       return false;
     }
 
