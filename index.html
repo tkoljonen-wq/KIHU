@@ -2017,6 +2017,70 @@
       $('progressFill').style.width = pct + '%';
     }
 
+
+    async function clearBrowserRuntimeCaches() {
+      // Poistaa mahdollisen PWA/service worker -välimuistin ennen uutta latausta.
+      // Tämä ei poista käyttäjän kalibrointitietoja localStoragesta.
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(reg => reg.unregister()));
+        }
+      } catch (e) {}
+
+      try {
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(key => caches.delete(key)));
+        }
+      } catch (e) {}
+    }
+
+    async function startNewStudyWithServerVersionCheck() {
+      goFullscreen();
+
+      const activeBtn = document.activeElement;
+      const originalText = activeBtn && activeBtn.tagName === 'BUTTON' ? activeBtn.textContent : '';
+      if (activeBtn && activeBtn.tagName === 'BUTTON') {
+        activeBtn.disabled = true;
+        activeBtn.textContent = 'TARKISTETAAN UUSI VERSIO…';
+      }
+
+      try {
+        const checkUrl = new URL(window.location.href);
+        checkUrl.hash = '';
+        checkUrl.searchParams.set('_versioncheck', Date.now().toString());
+
+        const response = await fetch(checkUrl.toString(), {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+
+        if (response.ok) {
+          await clearBrowserRuntimeCaches();
+
+          const reloadUrl = new URL(window.location.href);
+          reloadUrl.hash = '';
+          reloadUrl.searchParams.set('_reload', Date.now().toString());
+
+          window.location.replace(reloadUrl.toString());
+          return;
+        }
+      } catch (e) {}
+
+      // Jos verkkoyhteys tai palvelin ei vastaa, aloitetaan uusi tutkimus ilman uudelleenlatausta.
+      if (activeBtn && activeBtn.tagName === 'BUTTON') {
+        activeBtn.disabled = false;
+        activeBtn.textContent = originalText;
+      }
+      resetAll();
+    }
+
     function clampByte(v) {
       return Math.max(0, Math.min(255, Math.round(v)));
     }
@@ -2622,7 +2686,7 @@
             <button class="btn-secondary" id="printBtn" style="font-size:24px; padding:16px 28px;">TULOSTA YHTEENVETO</button>
           </div>
           <div class="new-test-wrap">
-            <button class="btn-primary" id="newTestBtn" style="margin-top:0; min-width:340px;">ALOITA ALUSTA</button>
+            <button class="btn-primary" id="newTestBtn" style="margin-top:0; min-width:340px;">ALOITA UUSI TUTKIMUS</button>
           </div>
         </div>
       `;
@@ -2630,10 +2694,7 @@
       $('resultCard').innerHTML = h;
       setProgress(100);
       showScreen('resultScreen');
-      $('newTestBtn').addEventListener('click', () => {
-        goFullscreen();
-        resetAll();
-      });
+      $('newTestBtn').addEventListener('click', startNewStudyWithServerVersionCheck);
       $('printBtn').addEventListener('click', printReferral);
       saveToGoogleSheets();
     }
