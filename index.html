@@ -2132,14 +2132,18 @@
       document.documentElement.style.setProperty('--bar-green', rgbHex(greenColor));
     }
 
+    function isValidRgb(c) {
+      return !!c && Number.isFinite(c.r) && Number.isFinite(c.g) && Number.isFinite(c.b);
+    }
+
     function loadCal() {
       try {
         const d = JSON.parse(localStorage.getItem(STORAGE_KEY));
         if (d && d.pxPerMm > 0 && d.distanceM > 0) {
           pxPerMm = d.pxPerMm;
           distanceM = d.distanceM;
-          if (d.red) redColor = { r: clampByte(d.red.r), g: clampByte(d.red.g), b: clampByte(d.red.b) };
-          if (d.green) greenColor = { r: clampByte(d.green.r), g: clampByte(d.green.g), b: clampByte(d.green.b) };
+          if (isValidRgb(d.red)) redColor = { r: clampByte(d.red.r), g: clampByte(d.red.g), b: clampByte(d.red.b) };
+          if (isValidRgb(d.green)) greenColor = { r: clampByte(d.green.r), g: clampByte(d.green.g), b: clampByte(d.green.b) };
           applyColors();
           return true;
         }
@@ -2331,7 +2335,9 @@
 
     function showOptotype() {
       const visus = VISUS_LEVELS[currentLevelIdx];
-      const diamPx = optotypeDiameterMm(visus, distanceM * 1000) * pxPerMm;
+      // Renkaan ulkohalkaisija on 100 yksikköä 120 yksikön viewBoxissa,
+      // joten SVG:n kokoa kasvatetaan kertoimella 120/100 (vrt. buildMalletSVG 512/480).
+      const diamPx = optotypeDiameterMm(visus, distanceM * 1000) * pxPerMm * (120 / 100);
       currentDirection = randomDirection();
       const svg = createLandoltSVG(currentDirection, diamPx, uidCounter++);
       const oc = $('optotypeContainer');
@@ -2809,7 +2815,20 @@
       `;
 
       $('printReferral').innerHTML = referralHTML;
-      setTimeout(() => { window.print(); }, 200);
+
+      // Odotetaan, että koosteen kuvat (QR-koodit, logo) ovat latautuneet ennen tulostusta.
+      // Varmuuden vuoksi tulostetaan viimeistään 2 sekunnin kuluttua, vaikka jokin kuva ei latautuisi.
+      const imgs = Array.from($('printReferral').querySelectorAll('img'));
+      const imagesReady = Promise.all(imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true });
+        });
+      }));
+      const timeoutFallback = new Promise(resolve => setTimeout(resolve, 2000));
+
+      Promise.race([imagesReady, timeoutFallback]).then(() => window.print());
     }
 
     function resetAll() {

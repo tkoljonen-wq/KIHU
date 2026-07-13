@@ -19,7 +19,6 @@
       --red-r: 226; --red-g: 0; --red-b: 0;
       --green-r: 0; --green-g: 157; --green-b: 0;
       --accent: #5bf;
-      --mm-line-px: 200;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -238,6 +237,8 @@
 
     .ch-btn:hover { background: var(--border); }
     .ch-btn:active { background: var(--border-hi); }
+    .ch-btn:disabled { opacity: 0.4; cursor: default; background: var(--surface2); }
+    .ch-slider:disabled { opacity: 0.4; cursor: default; }
 
     .ch-val {
       font-family: 'JetBrains Mono', monospace;
@@ -435,7 +436,7 @@
     /* Responsive */
     @media (max-width: 860px) {
       body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-      .sidebar { max-height: none; border-left: none; border-top: 1px solid var(--border); }
+      .sidebar { max-height: 55vh; border-left: none; border-top: 1px solid var(--border); }
       .mallet-svg { width: min(70vw, 400px); height: min(70vw, 400px); }
       .results-grid { grid-template-columns: 1fr; }
     }
@@ -446,8 +447,6 @@
     <div class="topbar">
       <h1>Puna–viherkalibrointi</h1>
       <div class="topbar-pills">
-        <div class="pill active" id="pillRed">PUN</div>
-        <div class="pill active" id="pillGreen">VIH</div>
         <div class="pill" id="pillMm">MITTA</div>
       </div>
     </div>
@@ -457,9 +456,6 @@
 
       <div class="mallet-svg" id="malletWrap">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-          <defs>
-            <clipPath id="c"><circle cx="256" cy="256" r="240"/></clipPath>
-          </defs>
           <g transform="rotate(0, 256, 256)">
             <circle cx="256" cy="256" r="240" fill="#000000"/>
             <rect x="210" y="33" width="92" height="446" fill="#ffffff"/>
@@ -559,7 +555,7 @@
       <div class="color-block">
         <div class="color-block-stripe" style="background:rgb(0,157,0)"></div>
         <div class="cb-header">
-          <span class="cb-hex" id="greenHex">#007F00</span>
+          <span class="cb-hex" id="greenHex">#009D00</span>
           <div class="cb-swatch" id="greenSwatch" style="background:rgb(0,157,0)"></div>
         </div>
         <div class="ch-row">
@@ -608,7 +604,7 @@
         <span class="key-tag">← →</span><span class="key-desc">Mittaviiva (← pidempi, → lyhyempi)</span>
         <span class="key-tag">PgUp/Dn</span><span class="key-desc">Mittaviiva ±10 px</span>
         <span class="key-tag">Enter</span><span class="key-desc">Vahvista</span>
-        <span class="key-tag">R</span><span class="key-desc">Aloita alusta</span>
+        <span class="key-tag">R</span><span class="key-desc">Aloita alusta (kun kalibrointi on valmis)</span>
       </div>
     </div>
   </aside>
@@ -735,7 +731,11 @@
       renderMeasure();
     }
 
-    async function finish() {
+    function setControlsDisabled(disabled) {
+      document.querySelectorAll('.ch-btn, .ch-slider').forEach(el => { el.disabled = disabled; });
+    }
+
+    function finish() {
       if (state.linePx === null) {
         setStatus('Tee ensin mittakalibrointi.', 'err');
         return;
@@ -773,48 +773,36 @@ line${MM}mmPx: ${state.linePx.toFixed(2)}`;
       $('mmMinusBtn').classList.add('hidden');
       $('mmPlusBtn').classList.add('hidden');
       $('backColorsBtn').classList.add('hidden');
+      setControlsDisabled(true);
 
       // Save as defaults for next session
-      await saveDefaults();
+      saveDefaults();
     }
 
     // ---- Persistent storage ----
 
-    async function waitForStorage(maxWait = 3000) {
-      if (window.storage) return true;
-      const start = Date.now();
-      while (Date.now() - start < maxWait) {
-        await new Promise(r => setTimeout(r, 100));
-        if (window.storage) return true;
-      }
-      return false;
-    }
+    const STORAGE_KEY = 'calibration-defaults';
 
-    async function saveDefaults() {
+    function saveDefaults() {
+      state.savedRed   = { ...state.red };
+      state.savedGreen = { ...state.green };
+      state.savedLinePx = state.linePx;
       try {
-        await waitForStorage();
         const data = {
           red: { ...state.red },
           green: { ...state.green },
           linePx: state.linePx
         };
-        state.savedRed   = { ...state.red };
-        state.savedGreen = { ...state.green };
-        state.savedLinePx = state.linePx;
-        await window.storage.set('calibration-defaults', JSON.stringify(data));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch (e) {
         console.error('Tallennus epäonnistui:', e);
       }
     }
 
-    async function loadDefaults() {
+    function loadDefaults() {
       try {
-        const ready = await waitForStorage();
-        if (!ready) return null;
-        const result = await window.storage.get('calibration-defaults');
-        if (result && result.value) {
-          return JSON.parse(result.value);
-        }
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
       } catch (e) {
         // No saved data — use hard-coded defaults
       }
@@ -835,11 +823,12 @@ line${MM}mmPx: ${state.linePx.toFixed(2)}`;
       $('resultsOverlay').classList.add('hidden');
       $('confirmBtn').disabled = false;
       $('measureBtn').classList.remove('hidden');
+      setControlsDisabled(false);
       setStatus('Nollattu edellisen kalibroinnin arvoihin.', 'ok');
       render();
     }
 
-    async function factoryReset() {
+    function factoryReset() {
       state.red   = { ...FACTORY_RED };
       state.green = { ...FACTORY_GREEN };
       state.linePx = FACTORY_LINEPX;
@@ -851,15 +840,16 @@ line${MM}mmPx: ${state.linePx.toFixed(2)}`;
       $('resultsOverlay').classList.add('hidden');
       $('confirmBtn').disabled = false;
       $('measureBtn').classList.remove('hidden');
+      setControlsDisabled(false);
       setStatus('Palautettu tehdasasetuksiin.', 'ok');
       render();
       // Clear storage
-      try { await waitForStorage(); await window.storage.delete('calibration-defaults'); } catch(e) {}
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
     }
 
     // Init: load saved defaults and apply
-    async function init() {
-      const saved = await loadDefaults();
+    function init() {
+      const saved = loadDefaults();
       if (saved) {
         state.red   = { ...saved.red };
         state.green = { ...saved.green };
@@ -940,8 +930,9 @@ line${MM}mmPx: ${state.linePx.toFixed(2)}`;
       }
 
       if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.metaKey) {
-        // Only restart if not typing in an input
-        if (e.target.tagName === 'INPUT') return;
+        // Only restart from the finished state — prevents losing
+        // in-progress adjustments to an accidental keypress
+        if (e.target.tagName === 'INPUT' || !state.done) return;
         e.preventDefault(); restart();
       }
     });
